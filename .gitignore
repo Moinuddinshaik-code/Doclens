@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+venv/
+env/
+.env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Model weights & data (large files)
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.gguf
+training/logs/
+training/checkpoints/
+data/generated/
+data/synthetic/
+
+# Keep template assets
+!data/templates/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+*.log

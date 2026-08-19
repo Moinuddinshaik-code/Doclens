@@ -1,0 +1,87 @@
+# DocLens Training Configuration
+# All hyperparameters in one place for reproducibility.
+#
+# Why a config file matters (interview talking point):
+#   Reproducibility is a core principle of rigorous ML research.
+#   Every training run should be fully determined by (code version + config + data).
+#   If hyperparameters are scattered across scripts, reproducing results becomes
+#   guesswork. A single config file makes it trivial.
+
+# ─── Model ────────────────────────────────────────────────────────────────────
+model:
+  name: "Qwen/Qwen2-VL-2B-Instruct"
+  # Fallback if Qwen2-VL is too heavy for available compute:
+  # name: "microsoft/Florence-2-base"
+  quantization: "4bit"  # Options: "4bit" (QLoRA), "8bit", "none"
+  torch_dtype: "bfloat16"  # "bfloat16" on Ampere+ GPUs, "float16" on older GPUs (T4)
+
+# ─── LoRA ─────────────────────────────────────────────────────────────────────
+lora:
+  r: 16                    # Rank — bottleneck dimension. 16 is balanced for 2B model.
+  lora_alpha: 32           # Scaling factor. Effective scale = alpha/r = 2.0
+  lora_dropout: 0.05       # Dropout on LoRA path to prevent overfitting on small data
+  target_modules:          # Which weight matrices to adapt
+    - "q_proj"             # Query projection in attention — what the model looks for
+    - "v_proj"             # Value projection — what information it extracts
+    # Uncomment below for more capacity (costs more memory/time):
+    # - "k_proj"           # Key projection
+    # - "o_proj"           # Output projection
+    # - "gate_proj"        # FFN gate (in LLaMA-style FFN)
+    # - "up_proj"          # FFN up projection
+    # - "down_proj"        # FFN down projection
+  bias: "none"             # Don't train biases — LoRA paper found this unnecessary
+  task_type: "CAUSAL_LM"   # Causal language modeling (autoregressive generation)
+
+# ─── Training ─────────────────────────────────────────────────────────────────
+training:
+  output_dir: "training/checkpoints"
+  num_epochs: 3
+  per_device_train_batch_size: 1          # Limited by GPU memory with VLM
+  per_device_eval_batch_size: 1
+  gradient_accumulation_steps: 8          # Effective batch size = 1 * 8 = 8
+  learning_rate: 2.0e-4                   # LoRA tolerates higher LR than full fine-tune
+  weight_decay: 0.01
+  warmup_ratio: 0.1                       # 10% of steps for LR warmup
+  lr_scheduler_type: "cosine"             # Cosine decay after warmup
+  fp16: false                             # Set true for T4 GPUs
+  bf16: true                              # Set true for Ampere+ GPUs (A100, 4090)
+  logging_steps: 10
+  eval_strategy: "steps"
+  eval_steps: 50
+  save_strategy: "epoch"
+  save_total_limit: 2                     # Keep only last 2 checkpoints to save disk
+  load_best_model_at_end: true
+  metric_for_best_model: "eval_loss"
+  greater_is_better: false
+  report_to: "none"                       # Options: "wandb", "tensorboard", "none"
+  seed: 42
+  dataloader_num_workers: 2
+  remove_unused_columns: false            # Required for custom VLM data collator
+  max_grad_norm: 1.0                      # Gradient clipping for stability
+
+# ─── Data ─────────────────────────────────────────────────────────────────────
+data:
+  train_dir: "data/generated/train"
+  val_dir: "data/generated/val"
+  clean_test_dir: "data/generated/clean_test"
+  adversarial_test_dir: "data/generated/adversarial_test"
+  document_type: "receipt"
+  max_length: 512                         # Max tokens for generation
+
+# ─── Generation (for synthetic data) ──────────────────────────────────────────
+generation:
+  num_train: 600
+  num_val: 100
+  num_clean_test: 100
+  num_adversarial_test: 80
+  image_width: 600
+  image_height: 900
+  seed: 42
+
+# ─── Inference ────────────────────────────────────────────────────────────────
+inference:
+  max_new_tokens: 512
+  temperature: 0.1          # Low temperature for deterministic extraction
+  top_p: 0.95
+  do_sample: false          # Greedy decoding for consistency (set true + temp for sampling)
+  repetition_penalty: 1.1   # Slight penalty to avoid repetitive generation
