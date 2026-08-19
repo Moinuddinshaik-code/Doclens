@@ -184,7 +184,7 @@ def load_model(
     model.eval()
     total_params = sum(p.numel() for p in model.parameters())
     print(f"  Total parameters: {total_params:,}")
-    print(f"  Model loaded successfully ✓")
+    print(f"  Model loaded successfully [OK]")
 
     return model, processor
 

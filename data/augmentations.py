@@ -433,7 +433,7 @@ def main():
             seed=42,
         )
 
-    print("\n✅ Adversarial test sets generated!")
+    print("\n[OK] Adversarial test sets generated!")
     print(f"   Location: {os.path.abspath(adversarial_dir)}")
 
 

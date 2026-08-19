@@ -279,6 +279,16 @@ def train(config_path: Optional[str] = None, **overrides):
     import inspect
     sig_params = set(inspect.signature(TrainingArguments.__init__).parameters.keys())
 
+    eval_strat = training_config.get("eval_strategy", "steps")
+    save_strat = training_config.get("save_strategy", eval_strat)
+    eval_st = training_config.get("eval_steps", 50)
+    save_st = training_config.get("save_steps", eval_st)
+
+    # HuggingFace requires save_strategy and eval_strategy to match when load_best_model_at_end is True
+    if training_config.get("load_best_model_at_end", True):
+        save_strat = eval_strat
+        save_st = eval_st
+
     raw_args = {
         "output_dir": output_dir,
         "num_train_epochs": training_config.get("num_epochs", 3),
@@ -291,8 +301,8 @@ def train(config_path: Optional[str] = None, **overrides):
         "fp16": use_fp16,
         "bf16": use_bf16,
         "logging_steps": training_config.get("logging_steps", 10),
-        "eval_steps": training_config.get("eval_steps", 50),
-        "save_strategy": training_config.get("save_strategy", "epoch"),
+        "eval_steps": eval_st,
+        "save_steps": save_st,
         "save_total_limit": training_config.get("save_total_limit", 2),
         "load_best_model_at_end": training_config.get("load_best_model_at_end", True),
         "metric_for_best_model": training_config.get("metric_for_best_model", "eval_loss"),
@@ -311,9 +321,11 @@ def train(config_path: Optional[str] = None, **overrides):
         raw_args["warmup_steps"] = 10
 
     if "eval_strategy" in sig_params:
-        raw_args["eval_strategy"] = training_config.get("eval_strategy", "steps")
+        raw_args["eval_strategy"] = eval_strat
+        raw_args["save_strategy"] = save_strat
     elif "evaluation_strategy" in sig_params:
-        raw_args["evaluation_strategy"] = training_config.get("eval_strategy", "steps")
+        raw_args["evaluation_strategy"] = eval_strat
+        raw_args["save_strategy"] = save_strat
 
     # Filter to parameters recognized by the installed transformers version
     valid_args = {k: v for k, v in raw_args.items() if k in sig_params}
