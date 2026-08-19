@@ -32,6 +32,7 @@ from typing import Optional
 
 import albumentations as A
 import numpy as np
+from PIL import Image, ImageDraw, ImageFont
 import sys
 # Ensure project root is in sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
