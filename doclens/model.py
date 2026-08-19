@@ -171,11 +171,15 @@ def load_model(
 
     # Load LoRA adapter if specified
     if lora_adapter_path is not None:
-        from peft import PeftModel
-        print(f"  Loading LoRA adapter from: {lora_adapter_path}")
-        model = PeftModel.from_pretrained(model, lora_adapter_path)
-        model = model.merge_and_unload()  # Merge for faster inference
-        print("  LoRA adapter merged into base model")
+        if os.path.exists(lora_adapter_path):
+            from peft import PeftModel
+            print(f"  Loading LoRA adapter from: {lora_adapter_path}")
+            model = PeftModel.from_pretrained(model, lora_adapter_path)
+            model = model.merge_and_unload()  # Merge for faster inference
+            print("  LoRA adapter merged into base model")
+        else:
+            print(f"  Note: Adapter directory '{lora_adapter_path}' not found.")
+            print("  Running in zero-shot base model mode.")
 
     model.eval()
     total_params = sum(p.numel() for p in model.parameters())
