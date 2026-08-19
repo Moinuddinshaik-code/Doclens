@@ -22,9 +22,13 @@ import json
 import os
 import random
 import string
+import sys
 from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Optional
+
+# Ensure project root is in sys.path
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from faker import Faker
 from PIL import Image, ImageDraw, ImageFont

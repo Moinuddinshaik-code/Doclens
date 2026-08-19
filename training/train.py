@@ -48,6 +48,9 @@ import time
 from pathlib import Path
 from typing import Optional
 
+# Ensure project root is in sys.path when running script directly
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import torch
 import yaml
 from PIL import Image

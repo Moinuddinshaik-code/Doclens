@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=68.0", "wheel"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "doclens"
@@ -61,9 +61,9 @@ render = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/doclens"
-Repository = "https://github.com/yourusername/doclens"
-Issues = "https://github.com/yourusername/doclens/issues"
+Homepage = "https://github.com/Moinuddinshaik-code/Doclens"
+Repository = "https://github.com/Moinuddinshaik-code/Doclens"
+Issues = "https://github.com/Moinuddinshaik-code/Doclens/issues"
 
 [project.scripts]
 doclens = "doclens.extractor:main"
