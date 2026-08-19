@@ -276,33 +276,48 @@ def train(config_path: Optional[str] = None, **overrides):
             use_fp16 = True
             print("  Note: GPU does not support bf16, using fp16")
 
-    training_args = TrainingArguments(
-        output_dir=output_dir,
-        num_train_epochs=training_config.get("num_epochs", 3),
-        per_device_train_batch_size=training_config.get("per_device_train_batch_size", 1),
-        per_device_eval_batch_size=training_config.get("per_device_eval_batch_size", 1),
-        gradient_accumulation_steps=training_config.get("gradient_accumulation_steps", 8),
-        learning_rate=training_config.get("learning_rate", 2e-4),
-        weight_decay=training_config.get("weight_decay", 0.01),
-        warmup_ratio=training_config.get("warmup_ratio", 0.1),
-        lr_scheduler_type=training_config.get("lr_scheduler_type", "cosine"),
-        fp16=use_fp16,
-        bf16=use_bf16,
-        logging_steps=training_config.get("logging_steps", 10),
-        eval_strategy=training_config.get("eval_strategy", "steps"),
-        eval_steps=training_config.get("eval_steps", 50),
-        save_strategy=training_config.get("save_strategy", "epoch"),
-        save_total_limit=training_config.get("save_total_limit", 2),
-        load_best_model_at_end=training_config.get("load_best_model_at_end", True),
-        metric_for_best_model=training_config.get("metric_for_best_model", "eval_loss"),
-        greater_is_better=training_config.get("greater_is_better", False),
-        report_to=training_config.get("report_to", "none"),
-        seed=training_config.get("seed", 42),
-        dataloader_num_workers=training_config.get("dataloader_num_workers", 0),
-        remove_unused_columns=False,
-        max_grad_norm=training_config.get("max_grad_norm", 1.0),
-        logging_dir=os.path.join(output_dir, "logs"),
-    )
+    import inspect
+    sig_params = set(inspect.signature(TrainingArguments.__init__).parameters.keys())
+
+    raw_args = {
+        "output_dir": output_dir,
+        "num_train_epochs": training_config.get("num_epochs", 3),
+        "per_device_train_batch_size": training_config.get("per_device_train_batch_size", 1),
+        "per_device_eval_batch_size": training_config.get("per_device_eval_batch_size", 1),
+        "gradient_accumulation_steps": training_config.get("gradient_accumulation_steps", 8),
+        "learning_rate": training_config.get("learning_rate", 2e-4),
+        "weight_decay": training_config.get("weight_decay", 0.01),
+        "lr_scheduler_type": training_config.get("lr_scheduler_type", "cosine"),
+        "fp16": use_fp16,
+        "bf16": use_bf16,
+        "logging_steps": training_config.get("logging_steps", 10),
+        "eval_steps": training_config.get("eval_steps", 50),
+        "save_strategy": training_config.get("save_strategy", "epoch"),
+        "save_total_limit": training_config.get("save_total_limit", 2),
+        "load_best_model_at_end": training_config.get("load_best_model_at_end", True),
+        "metric_for_best_model": training_config.get("metric_for_best_model", "eval_loss"),
+        "greater_is_better": training_config.get("greater_is_better", False),
+        "report_to": training_config.get("report_to", "none"),
+        "seed": training_config.get("seed", 42),
+        "dataloader_num_workers": training_config.get("dataloader_num_workers", 0),
+        "remove_unused_columns": False,
+        "max_grad_norm": training_config.get("max_grad_norm", 1.0),
+        "logging_dir": os.path.join(output_dir, "logs"),
+    }
+
+    if "warmup_ratio" in sig_params:
+        raw_args["warmup_ratio"] = float(training_config.get("warmup_ratio", 0.1))
+    elif "warmup_steps" in sig_params:
+        raw_args["warmup_steps"] = 10
+
+    if "eval_strategy" in sig_params:
+        raw_args["eval_strategy"] = training_config.get("eval_strategy", "steps")
+    elif "evaluation_strategy" in sig_params:
+        raw_args["evaluation_strategy"] = training_config.get("eval_strategy", "steps")
+
+    # Filter to parameters recognized by the installed transformers version
+    valid_args = {k: v for k, v in raw_args.items() if k in sig_params}
+    training_args = TrainingArguments(**valid_args)
 
     # Create custom data collator
     def custom_collate(batch):
